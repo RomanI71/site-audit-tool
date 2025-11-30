@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Free Mini Site Audit Tool</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
+  .box { background:#fff; padding:20px; border-radius:12px; max-width:600px; margin:auto; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+  input { width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; }
+  button { width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:16px; }
+  button:hover { opacity:0.9; }
+  .result { margin-top:20px; padding:15px; background:#fafafa; border-radius:8px; border:1px solid #ddd; }
+  .ok { color:green; font-weight:bold; }
+  .bad { color:red; font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>Mini Site Audit Tool (FREE)</h2>
+  <input type="text" id="url" placeholder="Enter website URL (e.g., https://example.com)" />
+  <button onclick="auditSite()">Check Website Issues</button>
+  <div id="output" class="result"></div>
+</div>
+
+<script>
+async function auditSite() {
+  const url = document.getElementById("url").value.trim();
+  const out = document.getElementById("output");
+  out.innerHTML = "Checking, please wait...";
+
+  try {
+    const res = await fetch("https://thingproxy.freeboard.io/fetch/get?url=" + encodeURIComponent(url));
+    const data = await res.json();
+    const html = data.contents;
+
+    let issues = "";
+
+    // Title Check
+    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+    issues += titleMatch ? "<p class='ok'>✓ Title Found</p>" : "<p class='bad'>✗ Title Missing</p>";
+
+    // Meta Description
+    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*>/i);
+    issues += descMatch ? "<p class='ok'>✓ Meta Description Found</p>" : "<p class='bad'>✗ Meta Description Missing</p>";
+
+    // H1 Check
+    const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+    issues += h1Match ? "<p class='ok'>✓ H1 Found</p>" : "<p class='bad'>✗ H1 Missing</p>";
+
+    // Robots.txt check
+    const robots = await fetch(url + "/robots.txt");
+    issues += robots.status === 200 ? "<p class='ok'>✓ robots.txt Found</p>" : "<p class='bad'>✗ robots.txt Missing</p>";
+
+    // Sitemap check
+    const sitemap = await fetch(url + "/sitemap.xml");
+    issues += sitemap.status === 200 ? "<p class='ok'>✓ sitemap.xml Found</p>" : "<p class='bad'>✗ sitemap.xml Missing</p>";
+
+    out.innerHTML = issues;
+  } catch (e) {
+    out.innerHTML = "<p class='bad'>Error fetching data. Website may block API.</p>";
+  }
+}
+</script>
+</body>
+</html>
